@@ -31,19 +31,6 @@ fcb		= $8000
 .var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
 p_text	dta a(text)
 
-init
-	lda #0
-	sta COLBK
-	sta AUDC1
-	sta AUDC2
-	sta AUDC3
-	sta AUDC4
-	sta IRQST
-	sta DMACTL
-	sta NMIEN
-	lda #$ff
-	sta PORTB
-
 main
 	lda #0
 	sta AUDCTL
@@ -62,7 +49,6 @@ main
 
 	mwa #dli VDSLST
 	mwa #dl SDLSTL
-
 
 	jsr scroll
 	jsr gendl
@@ -110,22 +96,21 @@ vbi
 	jsr gendl2
 	jsr fcb+1
 
-	clc
-	lda ypos
-	adc #$0c
-	tay
-	adc #32
-	sta ycoor
-
 	ldx p_tab
 	lda magtab, x
 	sta ypos
 	inc p_tab
 
+	clc
+	adc #$0c
+	tay
+	adc #32
+	sta ycoor
+
 wait2
 	sta WSYNC
 	dey
-	bpl wait2
+	bne wait2
 
 // White Line @start of magnifier
 	lda #5
@@ -137,14 +122,10 @@ wait2
 
 	ldy #29
 
-wait3								; Verify this 
+wait3 
 	sta WSYNC
 	dey
-	bne wait3
-
-	lda ycoor
-	sbc #160
-	bpl noend
+	bpl wait3
 
 // White Line @end of magnifier
 	lda #5
@@ -211,9 +192,9 @@ loop2
 	sta nsl+1
 
 	dex
-	bne loop2
+	bpl loop2
 
-; 144 - ypos x GR15
+; (144 - ypos) x GR15
 	sec
 	lda #144
 	sbc ypos
@@ -312,9 +293,9 @@ bloop2
 	sta zp+1
 
 	dex
-	bne bloop2
+	bpl bloop2
 
-; 144 - ypos x GR15
+; (144 - ypos) x GR15
 	sec
 	lda #144
 	sbc ypos
@@ -451,6 +432,8 @@ bar	dta $00,$02,$04,$06,$08,$0a
 	dta $0c,$0e,$0e,$0c,$0a,$08
 	dta $06,$04,$02,$00
 
+/*************************************/
+
 text
 	dta d'                                        ', \
 	d'B-WARE'*, d',THE NEW NAME ON THE 8-BIT ATARIS.        ',\
@@ -469,8 +452,6 @@ text
 tend
 	dta d'                                        '
 
-
 /*************************************/
-	//ini init
 
 	run main
