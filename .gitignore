@@ -15,6 +15,10 @@
 *.zip
 
 # Misc
+*.org
+*.bak
+*.swp
+*.old
 *.log
 *.sql
 *.sqlite

@@ -17,10 +17,8 @@
 	org $5100
 	ins "demo-picture.dat"
 
-/*
 	org $8000
 	ins "demo-music.dat"
-*/
 
     org $a800
 
@@ -110,7 +108,7 @@ vbi
 
 	jsr scroll
 	jsr gendl2
-//	jsr fcb+1					; Play FCB
+	jsr fcb+1
 
 	clc
 	lda ypos
