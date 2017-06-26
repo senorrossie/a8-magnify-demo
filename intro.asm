@@ -1,35 +1,28 @@
 /* Magnify Intro
 **
-** COMPILE: "c:\Program Files (x86)\MADS\mads.exe" -i:..\..\inc\a8\ -o:intro.xex intro.asm
-**/
+** COMPILE:
+** # Windows
+** "c:\Program Files (x86)\MADS\mads.exe" -i:inc\ -o:xex\intro.xex intro.asm
+**
+** # Linux / OSX
+** mads -i:inc/ -o:xex/intro.xex intro.asm
+*/
+
 	icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
 
 	org $5100
-
+pic_pg1
 	ins "intro-picture.dat"
-pic_pg1 = $5100
 pic_pg2 = $6000
 
-    org $a800
+	org $a800
+	
+.var	.byte	ihss=7, icount=0
 
-.var	.byte	hss=7, count=0
-
-init
-	lda #0
-	sta COLBK
-	sta AUDC1
-	sta AUDC2
-	sta AUDC3
-	sta AUDC4
-	sta IRQST
-	sta DMACTL
-	sta NMIEN
-	lda #$ff
-	sta PORTB
-
-main
-	mwa #dli VDSLST
-	mwa #dl SDLSTL
+// MAIN
+intro
+	mwa #idli VDSLST
+	mwa #idl SDLSTL
 
 	lda #$32
 	sta COLOR0
@@ -41,23 +34,23 @@ main
 	sta COLOR4
 
 	lda #7
-	sta hss
+	sta ihss
 
 	lda #0
-	sta count
+	sta icount
 
 	lda #$c0
 	sta NMIEN
 	
-	ldy #<vbi
-	ldx #>vbi
+	ldy #<ivbi
+	ldx #>ivbi
 	lda #6
 	jsr SETVBV
 
-wait
+iwait
 	lda CONSOL
 	cmp #6			; Wait for START
-	bne wait
+	bne iwait
 
 	lda #0
 	sta COLBK
@@ -75,66 +68,62 @@ wait
 // END: main
 
 /*** Vertical Blank Interrupt ***/
-vbi
-	jsr scroll
+ivbi
+	jsr iscroll
 	jmp SYSVBV
 
-scroll
-	lda hss
+iscroll
+	lda ihss
 	sta HSCROL
 
-	dec hss
-	dec hss
-	bpl ret
+	dec ihss
+	dec ihss
+	bpl iret
 
 	lda #7
-	sta hss
+	sta ihss
 
-	inw p_text
+	inw p_itext
 
-	lda count
-	cmp #$1e					; Is title in middle of the screen?
+	lda icount
+	cmp #$1e					; Is ititle in middle of the screen?
 	bne tscroll
 
-	lda p_dtitle
+	lda p_idtitle
 	cmp #$00
-	bne cont
+	bne icont
 
 	lda #$80
-	sta p_dtitle
+	sta p_idtitle
 	lda #$47
-	sta p_dtitle2
+	sta p_idtitle2
 
-	jmp cont					; Updated DL, skip the title scroller
+	jmp icont					; Updated DL, skip the ititle iscroller
 
 tscroll
-	inw p_title
+	inw p_ititle
+	inc icount
 
-	lda count
-	cmp #$1e					; Is title in middle of the screen?
-	beq cont
-	
-	inc count
-
-cont
+icont
 	lda #9
 	sta HSCROL
 
-	lda #<tend
-	cmp p_text
-	bne ret
-	lda #>tend
-	cmp p_text+1
-	bne ret
+	lda #<itend
+	cmp p_itext
+	bne iret
+	lda #>itend
+	cmp p_itext+1
+	bne iret
 
-	mwa #text p_text
+	mwa #itext p_itext
 
-ret
+iret
 	rts
 
 
 /*** Display List Interrupt ***/
-dli	pha
+idli
+	pha
 	txa
 	pha
 	tya
@@ -142,12 +131,13 @@ dli	pha
 
 	sta WSYNC
 
-	ldy bar3
+	ldy ibar3
 	ldx #$0f
 
-barloop	lda bar,x
+ibarloop
+	lda ibar,x
 	sta COLPF0
-	lda bar2,x
+	lda ibar2,x
 	sta COLPF2
 	sty COLPF3
 	
@@ -159,9 +149,9 @@ barloop	lda bar,x
 	dey
 
 	dex
-	bpl barloop
+	bpl ibarloop
 
-	inc bar3
+	inc ibar3
 
 	lda COLOR0
 	sta COLPF0
@@ -182,39 +172,41 @@ barloop	lda bar,x
 	
 	rti
 
-bar	dta $76,$88,$78,$8a
+ibar
+	dta $76,$88,$78,$8a
 	dta $7a,$8c,$7c,$8e
 	dta $7e,$8c,$7c,$8a
 	dta $7a,$88,$78,$86
 
-bar2	dta $84,$86,$88,$8a
+ibar2
+	dta $84,$86,$88,$8a
 	dta $8c,$8e,$0c,$0e
 	dta	$0e,$0c,$3e,$3c
 	dta $3a,$38,$36,$34
 
-bar3	dta 0
+ibar3
+	dta 0
 
 /*** Display List ***/
-dl	dta DL_BLANK1
+idl
+	dta DL_BLANK1
 	dta DL_GR15 | DL_LMS, a(pic_pg1)								; $4e, $5100
 :111	dta DL_GR15													; Create 8x13+7 lines of gr 15 (40 bytes/line)
 	dta DL_GR15 | DL_LMS, a(pic_pg2)								; $4e, $6000
 :47	dta DL_GR15														; Create 8x5+7 lines of gr 15 (40 bytes/line)
-p_dtitle																; Pointer for title line (need to enable dli)
+p_idtitle															; Pointer for ititle line (need to enable idli)
 	dta DL_BLANK1													; $00
-p_dtitle2																; Pointer for title line (need to disable dl_hscroll)
+p_idtitle2															; Pointer for ititle line (need to disable dl_hiscroll)
 	dta DL_GR2 | DL_LMS | DL_VSCROLL								; $57 ($07 | $40 | $10)
-p_title
-	dta a(title)
+p_ititle
+	dta a(ititle)
 	dta DL_BLANK7 | DL_DLI											; $70+$80
 	dta DL_GR2 | DL_LMS | DL_VSCROLL								; $57 ($07 | $40 | $10)
-p_text
-	dta a(text)
-	dta DL_JVB, a(dl)												; $51, (dl)
+p_itext
+	dta a(itext)
+	dta DL_JVB, a(idl)												; $51, (dl)
 
-	org $8000
-
-text
+itext
 	dta d'                                                            ', \
 	d'WELCOME TO THE INTRO OF THE', d' /magnify demo\'*, \
 	d'                    ', \
@@ -230,13 +222,12 @@ text
 	d'PRESS START TO LOAD ', d' /the magnify demo\ '*, \
 	d'                    ', \
 	d'GREETINX TO: HTT AND WRM-SOFT'
-tend
+itend
 	dta d'                                        '
 
-title
+ititle
 	dta d'                              ', d' /the magnify demo\       '*
 
 /*************************************/
-	//ini init
-
-	run main
+	ini intro
+/*************************************/
