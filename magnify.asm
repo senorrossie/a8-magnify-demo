@@ -1,41 +1,41 @@
-/* Magnify Intro
+/* Magnify Demo
 **
-** COMPILE: "c:\Program Files (x86)\MADS\mads.exe" -i:..\..\inc\a8\ -o:magnify.xex magnify.asm
-**/
+** COMPILE:
+** # Windows
+** "c:\Program Files (x86)\MADS\mads.exe" -i:inc\ -o:xex\magnify.xex magnify.asm
+**
+** # Linux / OSX
+** mads -i:inc/ -i:xex/ -o:xex/magnify.xex magnify.asm
+*/
 
 .zpvar	zp	.word = $e0
 .zpvar	nsl	.word = $e2
 
-	icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
+	//icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
+	icl "intro.asm"
 
 	org $2300
+magtab
 	ins "demo-sinetable.dat"
-
-	org $2400
+font
 	ins "demo-font.dat"
 	
 	org $5100
+picture
 	ins "demo-picture.dat"
 
 	org $8000
+fcb
 	ins "demo-music.dat"
 
     org $a800
 
-picture = $5100
-dl		= $2000
-magtab	= $2300
-font	= $2400
-fcb		= $8000
-
 .var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
-p_text	dta a(text)
+.var	.word	dl=$2000
 
-main
-	lda #0
-	sta AUDCTL
-	lda #3
-	sta SKCTL
+main	
+	mwa #dli VDSLST
+	mwa #dl SDLSTL
 
 	ldx p_tab
 	lda magtab, x
@@ -45,10 +45,9 @@ main
 	sta hss
 
 	lda #0
-	sta NMIEN
-
-	mwa #dli VDSLST
-	mwa #dl SDLSTL
+	sta AUDCTL
+	lda #3
+	sta SKCTL
 
 	jsr scroll
 	jsr gendl
@@ -56,9 +55,9 @@ main
 	lda #$c0
 	sta NMIEN
 	
-	ldy #<vbi
-	ldx #>vbi
 	lda #7
+	ldx #>vbi
+	ldy #<vbi
 	jsr SETVBV
 
 wait
@@ -66,19 +65,8 @@ wait
 	cmp #6			; Wait for START
 	bne wait
 
-	lda #0
-	sta COLBK
-	sta AUDC1
-	sta AUDC2
-	sta AUDC3
-	sta AUDC4
-	sta IRQST
-	sta DMACTL
-	sta NMIEN
-	lda #$ff
-	sta PORTB
-
-	rts
+endloop
+	jmp endloop
 // END: main
 
 /*** Vertical Blank Interrupt ***/
@@ -433,6 +421,7 @@ bar	dta $00,$02,$04,$06,$08,$0a
 	dta $06,$04,$02,$00
 
 /*************************************/
+p_text	dta a(text)
 
 text
 	dta d'                                        ', \
@@ -442,16 +431,17 @@ text
 	d'. THIS DEMO WAS WRITTEN BY: ', d'SENOR ROSSIE'*, \
 	d'.                       NOTE FROM THE AUTHOR......... ', \
 	d'I HOPE YOU ENJOYED MY FIRST DEMOS FOR OUR LITTLE ATARIS, ', \
-	d'BUT I THINK YOU WILL LIKE THIS ONE EVEN BETTER. THE MUSIC IS ', \
-	d'PART OF A TRACK CALLED doo doo brown AND WAS CONVERTED TO ', \
-	d'A FUTURE COMPOSER FILE BY the gatekeeper (IT IS A DIRTY JOB, ', \
-	d'BUT SOMEONE HAS TO DO IT !). EVERYTHING ELSE WAS DONE BY ME. ', \
-	d'watch the scroll in my next part, for greetinx and the address ', \
-	d'to write to. SIGNING OFF,', d'SENOR ROSSIE'*, \
-	d'.                   '
+	d'BUT I THINK YOU WILL LIKE THIS ONE EVEN BETTER. THE MUSIC ', \
+	d'IS PART OF A TRACK BY ', d'2 HYPED BROTHERS AND A DOG '*, \
+	d'CALLED ', d'DOO DOO BROWN '*, d'AND WAS CONVERTED TO A ', \
+	d'FUTURE COMPOSER FILE BY the gatekeeper (IT IS A DIRTY ', \
+	d'JOB, BUT SOMEONE HAS TO DO IT !). EVERYTHING ELSE WAS ', \
+	d'DONE BY ME. watch the scroll in my next part for greetinx ', \
+	d'and the address to write to. SIGNING OFF, ', \
+	d'SENOR ROSSIE'*, d'.                   '
 tend
 	dta d'                                        '
 
 /*************************************/
-
 	run main
+/*************************************/
