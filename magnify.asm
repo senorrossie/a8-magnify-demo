@@ -32,13 +32,10 @@ fcb
 
 .var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
 .var	.word	dl=$2000
-p_text	dta a(text)
 
-main
-	lda #0
-	sta AUDCTL
-	lda #3
-	sta SKCTL
+main	
+	mwa #dli VDSLST
+	mwa #dl SDLSTL
 
 	ldx p_tab
 	lda magtab, x
@@ -48,10 +45,9 @@ main
 	sta hss
 
 	lda #0
-	sta NMIEN
-
-	mwa #dli VDSLST
-	mwa #dl SDLSTL
+	sta AUDCTL
+	lda #3
+	sta SKCTL
 
 	jsr scroll
 	jsr gendl
@@ -59,9 +55,9 @@ main
 	lda #$c0
 	sta NMIEN
 	
-	ldy #<vbi
-	ldx #>vbi
 	lda #7
+	ldx #>vbi
+	ldy #<vbi
 	jsr SETVBV
 
 wait
@@ -69,19 +65,8 @@ wait
 	cmp #6			; Wait for START
 	bne wait
 
-	lda #0
-	sta COLBK
-	sta AUDC1
-	sta AUDC2
-	sta AUDC3
-	sta AUDC4
-	sta IRQST
-	sta DMACTL
-	sta NMIEN
-	lda #$ff
-	sta PORTB
-
-	rts
+endloop
+	jmp endloop
 // END: main
 
 /*** Vertical Blank Interrupt ***/
@@ -436,6 +421,7 @@ bar	dta $00,$02,$04,$06,$08,$0a
 	dta $06,$04,$02,$00
 
 /*************************************/
+p_text	dta a(text)
 
 text
 	dta d'                                        ', \

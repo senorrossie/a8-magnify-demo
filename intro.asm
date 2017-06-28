@@ -42,9 +42,10 @@ intro
 	lda #$c0
 	sta NMIEN
 	
+	lda #6			; Immediate VBLank
+	ldx #>ivbi
 	ldy #<ivbi
 	ldx #>ivbi
-	lda #6
 	jsr SETVBV
 
 iwait
@@ -52,7 +53,18 @@ iwait
 	cmp #6			; Wait for START
 	bne iwait
 
+	lda #$40
+	sta NMIEN
+
+	lda #$06		; Restore Immediate VBlank 
+	ldx #$e4
+	ldy #$5f
+	jsr SETVBV
+
 	lda #0
+	sta COLOR0
+	sta COLOR1
+	sta COLOR2
 	sta COLBK
 	sta AUDC1
 	sta AUDC2
