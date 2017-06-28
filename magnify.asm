@@ -8,9 +8,6 @@
 ** mads -i:inc/ -i:xex/ -o:xex/magnify.xex magnify.asm
 */
 
-.zpvar	zp	.word = $e0
-.zpvar	nsl	.word = $e2
-
 	//icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
 	icl "intro.asm"
 
@@ -30,8 +27,10 @@ fcb
 
     org $a800
 
-.var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
+.zpvar	zp	.word = $e0
+.zpvar	nsl	.word = $e2
 .var	.word	dl=$2000
+.var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
 
 main	
 	mwa #dli VDSLST
@@ -55,7 +54,7 @@ main
 	lda #$c0
 	sta NMIEN
 	
-	lda #7
+	lda #7			; Deferred VBLank
 	ldx #>vbi
 	ldy #<vbi
 	jsr SETVBV
@@ -360,13 +359,8 @@ scroll
 	lda #9
 	sta HSCROL
 
-	lda #<tend
-	cmp p_text
-	bne ret
-	lda #>tend
-	cmp p_text+1
-	bne ret
-
+	cpw tend #p_text
+	scc
 	mwa #text p_text
 
 ret
