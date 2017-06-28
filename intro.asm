@@ -33,11 +33,11 @@ intro
 	lda #$00
 	sta COLOR4
 
-	lda #7
-	sta ihss
-
 	lda #0
 	sta icount
+
+	lda #7
+	sta ihss
 
 	lda #$c0
 	sta NMIEN
@@ -56,7 +56,7 @@ iwait
 	lda #$40
 	sta NMIEN
 
-	lda #$06		; Restore Immediate VBlank 
+	lda #6			; Restore Immediate VBlank 
 	ldx #$e4
 	ldy #$5f
 	jsr SETVBV
@@ -97,41 +97,37 @@ iscroll
 
 	inw p_itext
 
-	lda icount
-	cmp #$1e					; Is ititle in middle of the screen?
-	bne tscroll
+	cpw itend #p_itext
+	scc
+	mwa #itext p_itext			; Loop scrolltext
 
 	lda p_idtitle
-	cmp #$00
-	bne icont
+	cmp #$00					; Is DLI enabled for the title?
+	bne uhscrol
+
+	lda icount
+	cmp #$1d					; Is ititle in middle of the screen?
+	bne tscroll
 
 	lda #$80
-	sta p_idtitle
+	sta p_idtitle				; Enable DLI for the title
 	lda #$47
-	sta p_idtitle2
+	sta p_idtitle2				; Disable VSCROLL for title text
 
-	jmp icont					; Updated DL, skip the ititle iscroller
+	inw p_ititle
+
+	jmp uhscrol					; Updated DL, skip the ititle iscroller
 
 tscroll
 	inw p_ititle
 	inc icount
 
-icont
+uhscrol
 	lda #9
 	sta HSCROL
 
-	lda #<itend
-	cmp p_itext
-	bne iret
-	lda #>itend
-	cmp p_itext+1
-	bne iret
-
-	mwa #itext p_itext
-
 iret
 	rts
-
 
 /*** Display List Interrupt ***/
 idli
