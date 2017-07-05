@@ -29,7 +29,8 @@ fcb
 
 .zpvar	zp	.word = $e0
 .zpvar	nsl	.word = $e2
-.var	.word	dl=$2000
+
+.var	dl	.word = $2000
 .var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
 
 main	
@@ -50,10 +51,10 @@ main
 
 	jsr scroll
 	jsr gendl
-
+	
 	lda #$c0
 	sta NMIEN
-	
+
 	lda #7			; Deferred VBLank
 	ldx #>vbi
 	ldy #<vbi
@@ -359,7 +360,7 @@ scroll
 	lda #9
 	sta HSCROL
 
-	cpw tend #p_text
+	cpw p_text #tend
 	scc
 	mwa #text p_text
 
