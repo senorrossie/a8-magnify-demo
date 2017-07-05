@@ -45,7 +45,6 @@ intro
 	lda #6			; Immediate VBLank
 	ldx #>ivbi
 	ldy #<ivbi
-	ldx #>ivbi
 	jsr SETVBV
 
 iwait
@@ -97,7 +96,7 @@ iscroll
 
 	inw p_itext
 
-	cpw itend #p_itext
+	cpw p_itext #itend
 	scc
 	mwa #itext p_itext			; Loop scrolltext
 
@@ -216,9 +215,9 @@ p_itext
 
 itext
 	dta d'                                                            ', \
-	d'WELCOME TO THE INTRO OF THE', d' /magnify demo\'*, \
+	d'WELCOME TO THE INTRO OF ', d' /the magnify demo\'*, \
 	d'                    ', \
-	d'CREDITS OF THE MAGNFIY DEMO............ ', \
+	d'CREDITS............ ', \
 	d'GFX - '*, d'SENOR ROSSIE', \
 	d'                    ', \
 	d'MUSIC - '*, d'THE GATEKEEPER', \
