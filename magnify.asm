@@ -31,13 +31,13 @@ fcb
 .zpvar	nsl	.word = $e2
 
 .var	dl	.word = $2000
-.var	.byte	hss=7, count=0, ycoor=0, ypos=0, p_tab=0
+.var	.byte	hss=7, ypos=0, p_tab=0
 
 main	
 	mwa #dli VDSLST
 	mwa #dl SDLSTL
 
-	ldx p_tab
+	ldx p_tab		; Init magnify table (ypos) for first gendl run
 	lda magtab, x
 	sta ypos
 
@@ -49,9 +49,8 @@ main
 	lda #3
 	sta SKCTL
 
-	jsr scroll
-	jsr gendl
-	
+	jsr initdl
+
 	lda #$c0
 	sta NMIEN
 
@@ -65,8 +64,7 @@ wait
 	cmp #6			; Wait for START
 	bne wait
 
-endloop
-	jmp endloop
+	brk
 // END: main
 
 /*** Vertical Blank Interrupt ***/
@@ -80,74 +78,72 @@ vbi
 	lda #$00
 	sta COLBK
 
-	jsr scroll
-	jsr gendl2
-	jsr fcb+1
-
 	ldx p_tab
 	lda magtab, x
 	sta ypos
 	inc p_tab
 
-	clc
-	adc #$0c
-	tay
-	adc #32
-	sta ycoor
+	jsr scroll
+	jsr gendl
+
+	ldy ypos
 
 wait2
-	sta WSYNC
 	dey
+	sta WSYNC
 	bne wait2
 
-// White Line @start of magnifier
+// Grey Line @start of magnify bar
 	lda #5
 	sta COLBK
 	sta WSYNC
 
 	lda #0
 	sta COLBK
+	sta WSYNC
 
-	ldy #29
+	ldy #$1e
 
 wait3 
-	sta WSYNC
 	dey
-	bpl wait3
+	sta WSYNC
+	bne wait3
 
-// White Line @end of magnifier
+// Grey Line @end of magnifier
 	lda #5
 	sta COLBK
-
-noend
 	sta WSYNC
 
 	lda #0
 	sta COLBK
+	sta WSYNC
+
+	jsr fcb+1
 
 	jmp XITVBV
 
 // START: Display List generator
+//  Initialize screen RAM
 // 1. Magnify Image
-gendl
-	mwa #dl zp
-	mwa #picture nsl
+initdl
+	mwa #dl zp				; zp = dl memory location
+	mwa #picture nsl		; nsl = picture memory location (Next Scan Line)
 
 	ldy #0
 	ldx ypos
 
-loop1
-	lda #$4e
+iloop1
+	lda #$4e				; LMS + GR. 15
 	sta (zp),y
 	jsr inczp
-	lda nsl
+	lda nsl					; Image location Low Byte
 	sta (zp),y
 	jsr inczp
-	lda nsl+1
+	lda nsl+1				; Image location High Byte
 	sta (zp),y
 	jsr inczp
 
-	clc
+	clc						; Calculate next Image location
 	lda nsl
 	adc #$28
 	sta nsl
@@ -156,11 +152,11 @@ loop1
 	sta nsl+1
 
 	dex
-	bne loop1
+	bne iloop1
 
 ; 16 x GR7
 	ldx #$10
-loop2
+iloop2
 	lda #$4d
 	sta (zp),y
 	jsr inczp
@@ -180,7 +176,7 @@ loop2
 	sta nsl+1
 
 	dex
-	bpl loop2
+	bne iloop2
 
 ; (144 - ypos) x GR15
 	sec
@@ -188,7 +184,7 @@ loop2
 	sbc ypos
 	tax
 
-loop3
+iloop3
 	lda #$4e
 	sta (zp),y
 	jsr inczp
@@ -208,7 +204,7 @@ loop3
 	sta nsl+1
 
 	dex
-	bne loop3
+	bne iloop3
 // END: 1. Magnify Image
 
 	lda #$70
@@ -241,17 +237,17 @@ loop3
 
 	rts
 // END: Display list
-	
-// START: Display List generator #2
+
+// START: Display List generator
 // 1. Magnify Image
-gendl2
+gendl
 	mwa #dl zp
 	mwa #picture nsl
 
 	ldy #0
 	ldx ypos
 
-bloop1
+gloop1
 	lda #$4e
 	sta (zp),y
 
@@ -264,11 +260,11 @@ bloop1
 	sta zp+1
 
 	dex
-	bne bloop1
+	bne gloop1
 
 ; 16 x GR7
 	ldx #$10
-bloop2
+gloop2
 	lda #$4d
 	sta (zp),y
 
@@ -281,7 +277,7 @@ bloop2
 	sta zp+1
 
 	dex
-	bpl bloop2
+	bne gloop2
 
 ; (144 - ypos) x GR15
 	sec
@@ -289,7 +285,7 @@ bloop2
 	sbc ypos
 	tax
 
-bloop3
+gloop3
 	lda #$4e
 	sta (zp),y
 
@@ -302,7 +298,7 @@ bloop3
 	sta zp+1
 
 	dex
-	bne bloop3
+	bne gloop3
 // END: 1. Magnify Image
 
 	lda #$70
@@ -334,8 +330,8 @@ bloop3
 	jsr inczp
 
 	rts
-// END: Display List generator #2
-
+// END: Display List generator
+	
 inczp
 	inc zp
 	bne no1
