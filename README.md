@@ -3,5 +3,5 @@
 
 Atari 8-bit demo from 1994, ported from ATMAS to MADS.
 
-Besides the obvious typos in the scroller that were 'fixed', all bugs remained.
-
+# The Illusion
+The mega demo mentioned in the scrolltext was never released.
