@@ -6,10 +6,26 @@
 **
 ** # Linux / OSX
 ** mads -i:inc/ -i:xex/ -o:xex/magnify.xex magnify.asm
+**
+** ### NOTE ###
+** If you want to change the binary at compile time, use the -d:label=value
+**  eg. to create a standalone binary (no intro):
+** mads -d:STANDALONE=true -i:inc/ -i:xex/ -o:xex/magnify.xex magnify.asm
+**  or to create a binary with into that ends in a loop:
+** mads -d:SINGLE=true -i:inc/ -i:xex/ -o:xex/magnify.xex magnify.asm
+**
+** If you want to test 'The Magnify Demo' in Altirra, don't use the SINGLE label
 */
 
-	//icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
+// If you don't want to specify the labels at compile time, uncomment the ones below
+//.def STANDALONE			; Link intro if not defined
+//.def SINGLE				; Waiting for start, then exit ('init' instead of 'run')
+
+.ifdef STANDALONE
+	icl "systemequates.20070530_bkw.inc"		; Don't forget the specify -i:<path to file> at compile time
+.else
 	icl "intro.asm"
+.endif
 
 	org $2300
 magtab
@@ -33,7 +49,8 @@ fcb
 .var	dl	.word = $2000
 .var	.byte	hss=7, ypos=0, p_tab=0
 
-main	
+// BEGIN: main
+magnify
 	mwa #dli VDSLST
 	mwa #dl SDLSTL
 
@@ -59,12 +76,40 @@ main
 	ldy #<vbi
 	jsr SETVBV
 
+.ifdef SINGLE
 wait
 	lda CONSOL
 	cmp #6			; Wait for START
 	bne wait
 
-	brk
+	lda #$40
+	sta NMIEN
+
+	lda #7			; Restore Deferred VBlank 
+	ldx #$e4
+	ldy #$62
+	jsr SETVBV
+
+	lda #0
+	sta COLOR0
+	sta COLOR1
+	sta COLOR2
+	sta COLBK
+	sta AUDC1
+	sta AUDC2
+	sta AUDC3
+	sta AUDC4
+	sta IRQST
+	sta DMACTL
+	sta NMIEN
+	lda #$ff
+	sta PORTB
+
+	rts
+.else
+endless
+	jmp endless
+.endif
 // END: main
 
 /*** Vertical Blank Interrupt ***/
@@ -434,5 +479,9 @@ tend
 	dta d'                                        '
 
 /*************************************/
-	run main
+.ifdef SINGLE
+	ini magnify
+.else
+	run magnify
+.endif
 /*************************************/
